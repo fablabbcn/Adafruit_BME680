@@ -29,6 +29,7 @@
 #include "Arduino.h"
 #include "Adafruit_BME680.h"
 
+extern TwoWire auxWire;
 //#define BME680_DEBUG
 
 ///! These SPI pins must be global in order to work with underlying library
@@ -101,7 +102,7 @@ bool Adafruit_BME680::begin(uint8_t addr) {
 
   if (_cs == -1) {
     // i2c
-    Wire.begin();
+    auxWire.begin();
 
     gas_sensor.dev_id = addr;
     gas_sensor.intf = BME680_I2C_INTF;
@@ -502,17 +503,17 @@ int8_t i2c_read(uint8_t dev_id, uint8_t reg_addr, uint8_t *reg_data, uint16_t le
   Serial.print("\tI2C $"); Serial.print(reg_addr, HEX); Serial.print(" => ");
 #endif
 
-  Wire.beginTransmission((uint8_t)dev_id);
-  Wire.write((uint8_t)reg_addr);
-  Wire.endTransmission();
-  if (len != Wire.requestFrom((uint8_t)dev_id, (byte)len)) {
+  auxWire.beginTransmission((uint8_t)dev_id);
+  auxWire.write((uint8_t)reg_addr);
+  auxWire.endTransmission();
+  if (len != auxWire.requestFrom((uint8_t)dev_id, (byte)len)) {
 #ifdef BME680_DEBUG
     Serial.print("Failed to read "); Serial.print(len); Serial.print(" bytes from "); Serial.println(dev_id, HEX);
 #endif
     return 1;
   }
   while (len--) {
-    *reg_data = (uint8_t)Wire.read();
+    *reg_data = (uint8_t)auxWire.read();
 #ifdef BME680_DEBUG
     Serial.print("0x"); Serial.print(*reg_data, HEX); Serial.print(", ");
 #endif
@@ -533,16 +534,16 @@ int8_t i2c_write(uint8_t dev_id, uint8_t reg_addr, uint8_t *reg_data, uint16_t l
 #ifdef BME680_DEBUG
   Serial.print("\tI2C $"); Serial.print(reg_addr, HEX); Serial.print(" <= ");
 #endif
-  Wire.beginTransmission((uint8_t)dev_id);
-  Wire.write((uint8_t)reg_addr);
+  auxWire.beginTransmission((uint8_t)dev_id);
+  auxWire.write((uint8_t)reg_addr);
   while (len--) {
-    Wire.write(*reg_data);
+    auxWire.write(*reg_data);
 #ifdef BME680_DEBUG
     Serial.print("0x"); Serial.print(*reg_data, HEX); Serial.print(", ");
 #endif
     reg_data++;
   }
-  Wire.endTransmission();
+  auxWire.endTransmission();
 #ifdef BME680_DEBUG
   Serial.println("");
 #endif
